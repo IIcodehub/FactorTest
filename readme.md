@@ -93,6 +93,7 @@ $$t_{NW} = \frac{\overline{IC}}{\hat{\sigma}_{HAC}}$$
 
 * **Lag Selection**:
   The code automatically calculates the optimal lag order $L$ based on the sample size $T$:
+  
   $$L = \text{int}\left(4 \times \left(\frac{T}{100}\right)^{\frac{2}{9}}\right)$$
 
 ### 5. Group Return
