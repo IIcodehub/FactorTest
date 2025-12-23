@@ -1,12 +1,15 @@
-[简体中文](./README(CH).md#核心特性) | English
+[简体中文](./README(CH).md) | English
 
 # 📈 FactorTestProject - Modular Quantitative Factor Backtesting Framework
+
+![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 **FactorTestProject** is a lightweight, high-performance quantitative factor backtesting framework developed in Python. Designed for quantitative researchers and beginners alike, it aims to provide a one-stop solution covering **data cleaning**, **factor calculation**, **IC/ICIR analysis**, and **visualized report generation**.
 
 The project adopts a clear modular engineering design, supports multi-threaded parallel computation, and features memory and I/O optimizations for large-scale Pandas operations.
 
----
+-----
 
 ## ✨ Core Features
 
@@ -17,11 +20,11 @@ The project adopts a clear modular engineering design, supports multi-threaded p
 * **🗂 Intelligent Path Management**: Built-in `PathManager` automatically plans output directories based on backtest parameters, eliminating file clutter.
 * **🚀 Parallel Acceleration**: Supports multi-threaded concurrent testing for different start dates, stock pools, or abnormal scenarios.
 
----
+-----
 
 ## 📂 Project Directory Structure
 
-```text
+~~~text
 FactorTestProject/
 │
 ├── config/
@@ -43,10 +46,9 @@ FactorTestProject/
 │
 ├── main.py                  # [Entry] Main entry point for the program, handles task scheduling
 └── requirements.txt         # List of project dependencies
+~~~
 
-```
-
----
+-----
 
 ## 🧮 Core Algorithms and Mathematical Principles
 
@@ -57,49 +59,53 @@ This framework implements standard single-factor testing indicators in `core/cal
 IC is used to measure the linear correlation between factor values and next-period returns, reflecting the predictive power of the factor.
 
 * **Normal IC (Pearson)**:
+  $$IC_t = \frac{\text{Cov}(F_t, R_{t+1})}{\sigma_{F_t} \sigma_{R_{t+1}}}$$
+  Where $F_t$ is the factor value at time $t$, and $R_{t+1}$ is the stock return at time $t+1$.
 
-
-
-Where  is the factor value at time , and  is the stock return at time .
 * **Rank IC (Spearman)**: If `RANKIC = True` is configured, factor values and returns are first ranked (converted to ranks) before calculating the correlation coefficient. This eliminates the influence of outliers and captures non-linear relationships.
-
-
-
-*(Where  is the difference between the factor rank and return rank of an individual stock, and  is the number of stocks in the cross-section)*.
+  $$\text{RankIC}_t = 1 - \frac{6 \sum d_i^2}{n(n^2 - 1)}$$
+  *(Where $d_i$ is the difference between the factor rank and return rank of an individual stock, and $n$ is the number of stocks in the cross-section)*.
 
 ### 2. ICIR (Information Ratio)
 
 Measures the stability of the IC, representing the factor's predictive ability per unit of risk.
 
-* : The time-series mean of the IC sequence.
-* : The time-series standard deviation of the IC sequence.
-* *(Note: The ICIR output by this framework is usually the raw ratio before annualization; it can be multiplied by  if necessary).*
+$$ICIR = \frac{\overline{IC}}{\sigma_{IC}} \times \sqrt{N}$$
+
+* $\overline{IC}$: The time-series mean of the IC sequence.
+* $\sigma_{IC}$: The time-series standard deviation of the IC sequence.
+* *(Note: The ICIR output by this framework is usually the raw ratio before annualization; it can be multiplied by $\sqrt{252}$ if necessary).*
 
 ### 3. Turnover Proxy
 
 This project uses **factor autocorrelation** to estimate the turnover rate of the factor. The more stable the factor (higher autocorrelation), the lower the portfolio turnover.
 
-* **Interpretation**: If the factor ranking remains completely unchanged (), the theoretical turnover is 0; if the factor ranking is completely random (), the theoretical turnover is approximately 50%.
+$$\text{AutoCorr}_t = \text{RankCorr}(F_t, F_{t-1})$$
+$$\text{Turnover} \approx \frac{1 - \overline{\text{AutoCorr}}}{2}$$
+
+* **Interpretation**: If the factor ranking remains completely unchanged ($\text{AutoCorr}=1$), the theoretical turnover is 0; if the factor ranking is completely random ($\text{AutoCorr} \approx 0$), the theoretical turnover is approximately 50%.
 
 ### 4. Significance Testing (Newey-West T-statistic)
 
 Since IC sequences typically exhibit **autocorrelation** and **heteroscedasticity**, standard T-tests may overestimate significance. This project adopts the **Newey-West HAC (Heteroscedasticity and Autocorrelation Consistent)** adjustment to calculate more robust T-statistics.
 
+$$t_{NW} = \frac{\overline{IC}}{\hat{\sigma}_{HAC}}$$
+
 * **Lag Selection**:
-The code automatically calculates the optimal lag order  based on the sample size :
-
-
+  The code automatically calculates the optimal lag order $L$ based on the sample size $T$:
+  $$L = \text{int}\left(4 \times \left(\frac{T}{100}\right)^{\frac{2}{9}}\right)$$
 
 ### 5. Group Return
 
 On a daily basis, the stock pool is divided into 10 groups based on factor values (from largest to smallest, where G1 has the smallest factor values and G10 has the largest).
 
-* **Long-Short Return**: 
+$$R_{g,t} = \frac{1}{N_g} \sum_{i \in Group_g} R_{i, t+1}$$
+
+* **Long-Short Return**: $R_{G10} - R_{G1}$
 * **Excess Return**: If specific market scenarios are set (e.g., `ABN_DATES_TEST = 'rise'`), the code automatically subtracts the daily market mean:
+  $$R_{g,t}^{excess} = R_{g,t} - R_{market, t}$$
 
-
-
----
+-----
 
 ## 🚀 Quick Start
 
@@ -107,16 +113,15 @@ On a daily basis, the stock pool is divided into 10 groups based on factor value
 
 Ensure Python 3.8+ is installed, and run the following in the project root directory:
 
-```bash
+~~~bash
 pip install -r requirements.txt
-
-```
+~~~
 
 ### 2. Configure Backtest Parameters
 
 Open `config/settings.py` and modify the parameters as needed. The file contains detailed comments. Core parameters include:
 
-```python
+~~~python
 # === Mode Selection ===
 MODE = 'test'  # 'test': Run backtest; 'save': Extract data
 
@@ -132,15 +137,13 @@ STOCK_POOLS = ['all']         # Stock pools: 'all', '300', '500', 'HighBeta1000'
 RET_IDX = 'Open5TWAP'         # Return calculation: 'Open5TWAP' (Open avg price) or 'ClosePrice'
 GROUP_RET = True              # Whether to calculate group returns
 RANKIC = True                 # Whether to use RankIC
-
-```
+~~~
 
 ### 3. Run Backtest
 
-```bash
+~~~bash
 python main.py
-
-```
+~~~
 
 Program Execution Flow:
 
@@ -148,7 +151,7 @@ Program Execution Flow:
 2. **Parallel Computation**: Based on the configured dates and stock pools, calculates ICIR and group returns in parallel.
 3. **Report Generation**: Automatically generates charts and compiles the PDF.
 
----
+-----
 
 ## 📊 Output Results Description
 
@@ -158,7 +161,7 @@ Upon completion, results will be saved in the `results/` directory with the fold
 **The folder includes:**
 
 | Filename/Folder | Description |
-| --- | --- |
+| :--- | :--- |
 | `figures/` | Stores all generated PNG images (group return bar charts, cumulative net value curves) |
 | `ICIR_... .csv` | Overall statistical indicators of the factor (Mean IC, ICIR, Turnover, t-stat, etc.) |
 | `GroupRet_... .csv` | Average return statistics for the 10 groups |
@@ -166,7 +169,7 @@ Upon completion, results will be saved in the `results/` directory with the fold
 | `IC_ts_... .csv` | Daily time-series data of IC values |
 | **`Merged_..._Combined.pdf`** | **Final Summary Report**, containing all statistics and charts |
 
----
+-----
 
 ## ⚙️ Advanced Features
 
@@ -175,7 +178,7 @@ Upon completion, results will be saved in the `results/` directory with the fold
 Set `IND_NEU = True` in `settings.py`.
 
 * **Logic**: Before calculating IC and grouping, factor values are Z-Score standardized within Shenwan Level 1 (SW1) industries, and outliers beyond 3 standard deviations are removed.
-* **Formula**: 
+* **Formula**: $F_{neutral} = \frac{F_{raw} - \mu_{ind}}{\sigma_{ind}}$
 
 ### 2. Abnormal Scenario Testing
 
@@ -191,11 +194,10 @@ In addition to the built-in `300/500/800` pools, you can provide a CSV file path
 
 ## 🧬 Algorithm Flow
 ![Algorithm Preview](./FactorTest.png)
----
+
+-----
 
 ## 🤝 Contribution
 
 Issues and Pull Requests are welcome!
 If you find this project helpful, please give it a ⭐️ Star!
-
----
