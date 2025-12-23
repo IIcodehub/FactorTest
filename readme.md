@@ -1,203 +1,201 @@
+[简体中文](./README(CH).md#核心特性) | English
 
-# 📈 FactorTestProject - 模块化量化因子回测框架
+# 📈 FactorTestProject - Modular Quantitative Factor Backtesting Framework
 
-[](https://www.python.org/)
-[](https://www.google.com/search?q=)
-[](https://www.google.com/search?q=)
+**FactorTestProject** is a lightweight, high-performance quantitative factor backtesting framework developed in Python. Designed for quantitative researchers and beginners alike, it aims to provide a one-stop solution covering **data cleaning**, **factor calculation**, **IC/ICIR analysis**, and **visualized report generation**.
 
-**FactorTestProject** 是一个基于 Python 开发的轻量级、高性能量化因子回测框架。它专为量化研究员和初学者设计，旨在提供从**数据清洗**、**因子计算**、**IC/ICIR 分析**到**可视化报告生成**的一站式解决方案。
+The project adopts a clear modular engineering design, supports multi-threaded parallel computation, and features memory and I/O optimizations for large-scale Pandas operations.
 
-本项目采用清晰的工程化模块设计，支持多线程并行计算，并针对大量数据的 Pandas 操作进行了内存与 I/O 优化。
+---
 
------
+## ✨ Core Features
 
-## ✨ 核心特性
+* **⚡ High-Performance Backtesting**: Deeply optimized for `groupby` and `merge` operations, supporting efficient computation for massive factor datasets.
+* **🧩 Modular Architecture**: Complete separation of configuration, data, calculation, and reporting layers. The code logic is clear, extensible, and easy to maintain.
+* **📊 Automated Research Reports**: One-click generation of PDF research reports including IC time-series plots, grouped cumulative return charts, and long-short net value curves.
+* **🛠 Custom Factors**: Supports reading external custom factor files in Parquet/CSV formats without dependency on specific database environments.
+* **🗂 Intelligent Path Management**: Built-in `PathManager` automatically plans output directories based on backtest parameters, eliminating file clutter.
+* **🚀 Parallel Acceleration**: Supports multi-threaded concurrent testing for different start dates, stock pools, or abnormal scenarios.
 
-  * **⚡ 高性能回测**：针对 `groupby` 和 `merge` 操作深度优化，支持大规模因子数据的高效计算。
-  * **🧩 模块化架构**：配置、数据、计算、报表完全分离，代码逻辑清晰，易于扩展和维护。
-  * **📊 自动化研报**：一键生成包含 IC 时序图、分组累计收益图、多空净值曲线的 PDF 研报。
-  * **🛠 自定义因子**：支持读取外部 Parquet/CSV 格式的自定义因子文件，无需依赖特定数据库环境。
-  * **🗂 智能路径管理**：内置 `PathManager`，根据回测参数自动规划输出目录，从此告别文件混乱。
-  * **🚀 并行加速**：支持多线程并发测试不同的起始日期、股票池或异常情景。
+---
 
------
-
-## 📂 项目目录结构
+## 📂 Project Directory Structure
 
 ```text
 FactorTestProject/
 │
 ├── config/
 │   ├── __init__.py
-│   └── settings.py          # [控制台] 全局参数配置文件 (日期、股票池、因子路径等)
+│   └── settings.py          # [Console] Global parameter configuration (dates, stock pools, factor paths, etc.)
 │
 ├── core/
 │   ├── __init__.py
-│   ├── data_engine.py       # [数据层] 负责数据库交互、数据清洗、Parquet切分
-│   ├── calculator.py        # [计算层] 核心回测逻辑 (IC计算, Newey-West调整, 分组收益)
-│   └── reporter.py          # [表现层] Matplotlib 绘图引擎与 ReportLab PDF 生成器
+│   ├── data_engine.py       # [Data Layer] Database interaction, data cleaning, Parquet partitioning
+│   ├── calculator.py        # [Calculation Layer] Core backtest logic (IC calc, Newey-West adjustment, group returns)
+│   └── reporter.py          # [Presentation Layer] Matplotlib plotting engine and ReportLab PDF generator
 │
 ├── utils/
 │   ├── __init__.py
-│   ├── helpers.py           # [工具箱] 通用辅助函数
-│   └── path_manager.py      # [管家] 统一管理文件路径命名与目录创建
+│   ├── helpers.py           # [Toolbox] General utility functions
+│   └── path_manager.py      # [Steward] Unified management of file path naming and directory creation
 │
-├── results/                 # [输出] 回测结果自动保存在此处 (按任务分类)
+├── results/                 # [Output] Backtest results are automatically saved here (categorized by task)
 │
-├── main.py                  # [入口] 程序主入口，负责任务调度
-└── requirements.txt         # 项目依赖库列表
+├── main.py                  # [Entry] Main entry point for the program, handles task scheduling
+└── requirements.txt         # List of project dependencies
+
 ```
 
------
+---
 
-## 🧮 核心算法与数学原理
+## 🧮 Core Algorithms and Mathematical Principles
 
-本框架在 `core/calculator.py` 中实现了标准的单因子测试指标。以下是回测逻辑背后的数学细节：
+This framework implements standard single-factor testing indicators in `core/calculator.py`. Below are the mathematical details behind the backtesting logic:
 
-### 1\. IC (Information Coefficient, 信息系数)
+### 1. IC (Information Coefficient)
 
-IC 用于衡量因子值与下期收益率的线性相关程度，反映因子的预测能力。
+IC is used to measure the linear correlation between factor values and next-period returns, reflecting the predictive power of the factor.
 
-  * **Normal IC (Pearson)**:
-    $$IC_t = \frac{\text{Cov}(F_t, R_{t+1})}{\sigma_{F_t} \sigma_{R_{t+1}}}$$
-    其中 $F_t$ 为 $t$ 时刻的因子值，$R_{t+1}$ 为 $t+1$ 时刻的股票收益率。
+* **Normal IC (Pearson)**:
 
-  * **Rank IC (Spearman)**: 若配置 `RANKIC = True`，则先对因子值和收益率进行排序（转为秩），再计算相关系数。这能消除异常值影响并捕捉非线性关系。
-    $$\text{RankIC}_t = 1 - \frac{6 \sum d_i^2}{n(n^2 - 1)}$$
-    *(其中 $d_i$ 为个股因子排名与收益排名的差值，$n$ 为截面股票数量)*
 
-### 2\. ICIR (Information Ratio, 信息比率)
 
-衡量 IC 的稳定性，即单位风险下的因子预测能力。
+Where  is the factor value at time , and  is the stock return at time .
+* **Rank IC (Spearman)**: If `RANKIC = True` is configured, factor values and returns are first ranked (converted to ranks) before calculating the correlation coefficient. This eliminates the influence of outliers and captures non-linear relationships.
 
-$$ICIR = \frac{\overline{IC}}{\sigma_{IC}} \times \sqrt{N}$$
 
-  * $\overline{IC}$: IC 序列的时间序列均值
-  * $\sigma_{IC}$: IC 序列的时间序列标准差
-  * *(注：本框架输出的 ICIR 通常为年化前的原始比率，可视需要乘以 $\sqrt{252}$)*
 
-### 3\. 换手率代理指标 (Turnover Proxy)
+*(Where  is the difference between the factor rank and return rank of an individual stock, and  is the number of stocks in the cross-section)*.
 
-本项目采用**因子自相关性**来估算因子的换手率。因子越稳定（自相关性越高），持仓换手率越低。
+### 2. ICIR (Information Ratio)
 
-$$\text{AutoCorr}_t = \text{RankCorr}(F_t, F_{t-1})$$
-$$\text{Turnover} \approx \frac{1 - \overline{\text{AutoCorr}}}{2}$$
+Measures the stability of the IC, representing the factor's predictive ability per unit of risk.
 
-  * **含义**：若因子排名完全不变 ($\text{AutoCorr}=1$)，理论换手率为 0；若因子排名完全随机 ($\text{AutoCorr} \approx 0$)，理论换手率约为 50%。
+* : The time-series mean of the IC sequence.
+* : The time-series standard deviation of the IC sequence.
+* *(Note: The ICIR output by this framework is usually the raw ratio before annualization; it can be multiplied by  if necessary).*
 
-### 4\. 显著性检验 (Newey-West T-statistic)
+### 3. Turnover Proxy
 
-由于 IC 序列通常存在**自相关性 (Autocorrelation)** 和 **异方差性 (Heteroscedasticity)**，普通的 T 检验会高估显著性。本项目采用 **Newey-West HAC (Heteroscedasticity and Autocorrelation Consistent)** 调整来计算更稳健的 T 统计量。
+This project uses **factor autocorrelation** to estimate the turnover rate of the factor. The more stable the factor (higher autocorrelation), the lower the portfolio turnover.
 
-$$t_{NW} = \frac{\overline{IC}}{\hat{\sigma}_{HAC}}$$
+* **Interpretation**: If the factor ranking remains completely unchanged (), the theoretical turnover is 0; if the factor ranking is completely random (), the theoretical turnover is approximately 50%.
 
-  * **滞后阶数 (Lags) 选择**：
-    代码根据样本量 $T$ 自动计算最佳滞后阶数 $L$：
-    $$L = \text{int}\left(4 \times \left(\frac{T}{100}\right)^{\frac{2}{9}}\right)$$
+### 4. Significance Testing (Newey-West T-statistic)
 
-### 5\. 分组收益 (Group Return)
+Since IC sequences typically exhibit **autocorrelation** and **heteroscedasticity**, standard T-tests may overestimate significance. This project adopts the **Newey-West HAC (Heteroscedasticity and Autocorrelation Consistent)** adjustment to calculate more robust T-statistics.
 
-每日将股票池按因子值从大到小分为 10 组（G1 为因子值最小，G10 为因子值最大）。
+* **Lag Selection**:
+The code automatically calculates the optimal lag order  based on the sample size :
 
-$$R_{g,t} = \frac{1}{N_g} \sum_{i \in Group_g} R_{i, t+1}$$
 
-  * **多空收益 (Long-Short Return)**: $R_{G10} - R_{G1}$
-  * **超额收益 (Excess Return)**：若设置了特定市场情景（如 `ABN_DATES_TEST = 'rise'`），代码会自动减去当日全市场均值：
-    $$R_{g,t}^{excess} = R_{g,t} - R_{market, t}$$
 
------
+### 5. Group Return
 
-## 🚀 快速开始
+On a daily basis, the stock pool is divided into 10 groups based on factor values (from largest to smallest, where G1 has the smallest factor values and G10 has the largest).
 
-### 1\. 环境准备
+* **Long-Short Return**: 
+* **Excess Return**: If specific market scenarios are set (e.g., `ABN_DATES_TEST = 'rise'`), the code automatically subtracts the daily market mean:
 
-确保安装 Python 3.8+，并在项目根目录下运行：
+
+
+---
+
+## 🚀 Quick Start
+
+### 1. Environment Preparation
+
+Ensure Python 3.8+ is installed, and run the following in the project root directory:
 
 ```bash
 pip install -r requirements.txt
+
 ```
 
-### 2\. 配置回测参数
+### 2. Configure Backtest Parameters
 
-打开 `config/settings.py`，根据需求修改参数。该文件包含详细注释，核心参数如下：
+Open `config/settings.py` and modify the parameters as needed. The file contains detailed comments. Core parameters include:
 
 ```python
-# === 模式选择 ===
-MODE = 'test'  # 'test': 跑回测; 'save': 提取数据
+# === Mode Selection ===
+MODE = 'test'  # 'test': Run backtest; 'save': Extract data
 
-# === 自定义因子 ===
-# 如果你有自己的因子文件（Parquet/CSV），填在这里
+# === Custom Factors ===
+# If you have your own factor file (Parquet/CSV), enter the path here
 FACTOR_ADD_PATH = r"./MyFactorData.parquet"
 CUSTOM_FACTOR_NAME = 'MyAlpha01'
 
-# === 回测参数 ===
-START_DATES = ['2021-01-01']  # 开始日期
-END_DATE = '2025-06-30'       # 结束日期
-STOCK_POOLS = ['all']         # 股票池: 'all', '300', '500', 'HighBeta1000'
-RET_IDX = 'Open5TWAP'         # 收益计算: 'Open5TWAP'(开盘均价) 或 'ClosePrice'
-GROUP_RET = True              # 是否计算分组收益
-RANKIC = True                 # 是否使用 RankIC
+# === Backtest Parameters ===
+START_DATES = ['2021-01-01']  # Start dates
+END_DATE = '2025-06-30'       # End date
+STOCK_POOLS = ['all']         # Stock pools: 'all', '300', '500', 'HighBeta1000'
+RET_IDX = 'Open5TWAP'         # Return calculation: 'Open5TWAP' (Open avg price) or 'ClosePrice'
+GROUP_RET = True              # Whether to calculate group returns
+RANKIC = True                 # Whether to use RankIC
+
 ```
 
-### 3\. 运行回测
+### 3. Run Backtest
 
 ```bash
 python main.py
+
 ```
 
-程序运行流程：
+Program Execution Flow:
 
-1.  **数据预处理**：自动读取自定义因子文件，按年份切分并转换为 Parquet 格式存储在 `data/` 目录下。
-2.  **并行计算**：根据配置的日期和股票池，并行计算 ICIR 和分组收益。
-3.  **生成报告**：自动绘制图表并生成 PDF。
+1. **Data Preprocessing**: Automatically reads the custom factor file, partitions it by year, and stores it in Parquet format under the `data/` directory.
+2. **Parallel Computation**: Based on the configured dates and stock pools, calculates ICIR and group returns in parallel.
+3. **Report Generation**: Automatically generates charts and compiles the PDF.
 
------
+---
 
-## 📊 输出结果说明
+## 📊 Output Results Description
 
-回测完成后，结果将保存在 `results/` 目录下，文件夹命名格式为：
-`Start{开始日期}_Pool{股票池}_{场景}`
+Upon completion, results will be saved in the `results/` directory with the folder naming format:
+`Start{StartDate}_Pool{StockPool}_{Scenario}`
 
-**文件夹内包含：**
+**The folder includes:**
 
-| 文件名/文件夹 | 说明 |
-| :--- | :--- |
-| `figures/` | 存放所有生成的 PNG 图片（分组收益柱状图、累计净值曲线） |
-| `ICIR_... .csv` | 因子的整体统计指标（IC均值, ICIR, 换手率, t-stat 等） |
-| `GroupRet_... .csv` | 10个分组的平均收益率统计 |
-| `GroupRet_ts_... .csv` | 分组收益率的每日时间序列数据（用于画图） |
-| `IC_ts_... .csv` | 每日 IC 值的时间序列数据 |
-| **`Merged_..._Combined.pdf`** | **最终汇总报告**，包含所有统计数据和图表 |
+| Filename/Folder | Description |
+| --- | --- |
+| `figures/` | Stores all generated PNG images (group return bar charts, cumulative net value curves) |
+| `ICIR_... .csv` | Overall statistical indicators of the factor (Mean IC, ICIR, Turnover, t-stat, etc.) |
+| `GroupRet_... .csv` | Average return statistics for the 10 groups |
+| `GroupRet_ts_... .csv` | Daily time-series data of group returns (used for plotting) |
+| `IC_ts_... .csv` | Daily time-series data of IC values |
+| **`Merged_..._Combined.pdf`** | **Final Summary Report**, containing all statistics and charts |
 
------
+---
 
-## ⚙️ 进阶功能
+## ⚙️ Advanced Features
 
-### 1\. 行业中性化
+### 1. Industry Neutralization
 
-在 `settings.py` 中设置 `IND_NEU = True`。
+Set `IND_NEU = True` in `settings.py`.
 
-  * **逻辑**：在计算 IC 和分组前，对因子值进行申万一级行业 (SW1) 内的 Z-Score 标准化，并剔除 3 倍标准差之外的极值。
-  * **公式**：$F_{neutral} = \frac{F_{raw} - \mu_{ind}}{\sigma_{ind}}$
+* **Logic**: Before calculating IC and grouping, factor values are Z-Score standardized within Shenwan Level 1 (SW1) industries, and outliers beyond 3 standard deviations are removed.
+* **Formula**: 
 
-### 2\. 异常情景测试
+### 2. Abnormal Scenario Testing
 
-在 `settings.py` 中设置 `ABN_DATES_TEST`。
+Set `ABN_DATES_TEST` in `settings.py`.
 
-  * `'rise'`: 仅测试历史上市场暴涨的区间。
-  * `'V'`: 仅测试市场深 V 反转的区间。
-  * `['path/to/dates.csv']`: 传入自定义的日期列表文件，只在特定日期进行测试。
+* `'rise'`: Tests only historical periods where the market surged.
+* `'V'`: Tests only historical periods where the market underwent a "V-shaped" reversal.
+* `['path/to/dates.csv']`: Pass a custom file containing a list of dates to test only on those specific days.
 
-### 3\. 自定义股票池
+### 3. Custom Stock Pools
 
-除内置的 `300/500/800` 外，你可以提供一个包含 `TradingDay`, `SecuCode`, `Weight` 的 CSV 文件路径给 `STOCK_POOLS` 参数，框架会自动加载该文件作为股票池。
+In addition to the built-in `300/500/800` pools, you can provide a CSV file path containing `TradingDay`, `SecuCode`, and `Weight` to the `STOCK_POOLS` parameter; the framework will automatically load it as a stock pool.
 
------
+## 🧬 Algorithm Flow
+![Algorithm Preview](./FactorTest.png)
+---
 
-## 🤝 贡献
+## 🤝 Contribution
 
-欢迎提交 Issue 或 Pull Request！
-如果你觉得这个项目对你有帮助，请给它一个 ⭐️ Star！
+Issues and Pull Requests are welcome!
+If you find this project helpful, please give it a ⭐️ Star!
 
------
-
+---

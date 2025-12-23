@@ -1,4 +1,4 @@
-# core/reporter.py
+
 import os
 import pandas as pd
 import numpy as np
@@ -95,11 +95,15 @@ def plot_cumulative_returns_line(data_ts, factor, pm: PathManager):
     ax.set_xlabel('Date')
     ax.set_ylabel('Cumulative Return')
     
-    # 图例放在图外
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., fontsize='small')
+    # ---------------- [修改点 1] 图例移至左侧外部 ----------------
+    # bbox_to_anchor=(-0.15, 1): 相对于坐标轴左上角，向左偏移 0.15
+    # loc='upper right': 图例框的右上角对齐到 anchor 点
+    ax.legend(bbox_to_anchor=(-0.1, 1), loc='upper right', borderaxespad=0., fontsize='small')
+    
     ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.2f'))
     
-    plt.subplots_adjust(right=0.75) 
+    # 调整布局：增大 left 参数，为左侧图例留出空间
+    plt.subplots_adjust(left=0.20, right=0.91) 
     fig.autofmt_xdate() 
     
     # 获取保存路径
@@ -123,11 +127,11 @@ def _internal_create_pdf(pdf_path, factor_data, pm: PathManager, title_str, repo
     # 因子排序
     factors = sorted(list(factor_data.keys()), key=natural_sort_key)
     
-    # 分页处理：每页 6 个因子 (3行 x 2列)
-    for i in range(0, len(factors), 6):
+    # 分页处理：每页 4 个因子 (3行 x 2列)
+    for i in range(0, len(factors), 4):
         table_data = []
-        # 每页处理 6 个，步长为 2 (一行两个)
-        for j in range(i, min(i+6, len(factors)), 2):
+        # 每页处理 4 个，步长为 2 (一行两个)
+        for j in range(i, min(i+4, len(factors)), 2):
             row = []
             for k in range(2):
                 if j+k < len(factors):
@@ -159,6 +163,10 @@ def _internal_create_pdf(pdf_path, factor_data, pm: PathManager, title_str, repo
                         else:
                             cell_content.append(Paragraph("缺失柱状图", styles['Normal']))
                     
+                    # ---------------- [修改点 2] 增加 Combined 模式下的垂直间距 ----------------
+                    if report_type == 'Combined':
+                        cell_content.append(Spacer(1, 0.3 * inch)) # 增加 0.3 英寸的间距
+
                     if report_type in ['Line', 'Combined']:
                         if os.path.exists(img_line_path):
                             cell_content.append(Image(img_line_path, width=3.8*inch, height=2.8*inch))
@@ -177,7 +185,7 @@ def _internal_create_pdf(pdf_path, factor_data, pm: PathManager, title_str, repo
             row_height = 3.8 * inch 
             
         # 计算当前页实际行数
-        current_page_factors = min(i+6, len(factors)) - i
+        current_page_factors = min(i+4, len(factors)) - i
         num_rows = int(np.ceil(current_page_factors / 2))
         
         table = Table(table_data, colWidths=[3.5*inch]*2, rowHeights=[row_height]*num_rows)
@@ -265,7 +273,7 @@ def gen_plot_pdf(name, pm: PathManager, end_date, ret_idx, month_status, ind_neu
     for r_type in ['Bar', 'Line', 'Combined']:
         pdf_path = pm.get_pdf_path(icir_path, r_type)
         
-        # [关键修复] 使用 pm.pool 替代 stk_range
+        # 使用 pm.pool 替代 stk_range
         title = f"{name} Report ({pm.pool}) - {r_type} Charts"
         
         success = _internal_create_pdf(pdf_path, factor_data, pm, title, r_type)

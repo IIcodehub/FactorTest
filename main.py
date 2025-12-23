@@ -27,7 +27,6 @@ def run_test_pipeline(params):
     t0 = time.time()
 
     # 2. 执行计算
-    # 注意：此时 cfg.NAME_LIST 可能已经被自定义因子逻辑修改为 [cfg.CUSTOM_FACTOR_NAME]
     run_calculation_task(
         pm=pm,
         name_list=cfg.NAME_LIST,

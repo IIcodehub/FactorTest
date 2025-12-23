@@ -5,7 +5,7 @@ import os
 #                                 路径配置
 # ==============================================================================
 # 因子数据存储根目录 (存放 parquet 文件，程序会自动在此目录下创建年份文件夹)
-FACTOR_DIR = r'./策略框架/data'
+FACTOR_DIR = r'./FactorTest/data'
 
 # 测试结果输出根目录 (存放 CSV, 图片, PDF 报告)
 OUTPUT_DIR = r'./FactorTest/results'
@@ -22,13 +22,13 @@ STATUS_DIR_PATH = '1602-2409月份状态滞后对应表.xlsx'
 # 自定义因子文件路径
 # 作用：若不为 None，程序将优先处理此文件，将其切分并覆盖 NAME_LIST 进行测试。
 # 格式要求：parquet 或 csv，必须包含 'TradingDay' 和 'SecuCode' 列。
-# FACTOR_ADD_PATH = r"./All_Factors.parquet" 
-FACTOR_ADD_PATH = None
+FACTOR_ADD_PATH = r"./All_Factors_Merged7.parquet" 
+# FACTOR_ADD_PATH = None
 
 # 自定义因子在系统内部的名称
 # 系统会将切分后的文件保存为: Factors_{CUSTOM_FACTOR_NAME}_all.parquet
 # 且测试报告中的因子组名也会显示为这个名称
-CUSTOM_FACTOR_NAME = 'CustomFactor'
+CUSTOM_FACTOR_NAME = 'TestFactor7'
 
 # ==============================================================================
 #                                 运行模式配置

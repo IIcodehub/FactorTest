@@ -10,9 +10,6 @@ import statsmodels.api as sm
 import glob
 from utils.path_manager import PathManager
 
-# ==============================================================================
-#                                 数学与统计辅助函数
-# ==============================================================================
 
 def get_newey_west_tstat(ic_series):
     """计算IC序列的Newey-West T-statistic和p-value"""
@@ -67,6 +64,7 @@ def get_valid_pool(start_date, end_date, stk_range, input_dir):
             if stk_range == '300': cols.append('IndexW300')
             elif stk_range == '500': cols.append('IndexW500')
             elif stk_range == '800': cols.extend(['IndexW300', 'IndexW500'])
+            elif stk_range == '1000':cols.extend(['IndexW1000'])
             elif stk_range == '1800': cols.extend(['IndexW300', 'IndexW500', 'IndexW1000'])
             elif stk_range == '2200': cols.extend(['IndexW300', 'IndexW500', 'ID3000'])
             elif stk_range == '3000': cols.append('IndexW300')
@@ -86,7 +84,9 @@ def get_valid_pool(start_date, end_date, stk_range, input_dir):
         elif stk_range == '500':
             return df.loc[df['IndexW500'] > 0, ['TradingDay', 'SecuCode']]
         elif stk_range == '800':
-            return df.loc[(df['IndexW300'] > 0) | (df['IndexW500'] > 0), ['TradingDay', 'SecuCode']]
+            return df.loc[(df['IndexW300'] > 0) | (df['IndexW500'] > 0), ['TradingDay', 'SecuCode']]       
+        elif stk_range == '1000':            
+            return df.loc[df['IndexW1000'] > 0, ['TradingDay', 'SecuCode']]
         elif stk_range == '1800':
             return df.loc[(df['IndexW300'] > 0) | (df['IndexW500'] > 0) | (df['IndexW1000'] > 0), ['TradingDay', 'SecuCode']]
         elif stk_range == '2200':
