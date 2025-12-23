@@ -1,4 +1,4 @@
-简体中文 | [English](./README.md)
+简体中文 | [English](./readme.md)
 # 📈 FactorTestProject - 模块化量化因子回测框架
 
 [](https://www.python.org/)
